@@ -1,0 +1,15 @@
+torch>=2.0.0
+torchvision
+transformers>=4.47.0
+accelerate
+peft
+pdf2image
+pillow
+opencv-python-headless
+openpyxl
+pandas
+tqdm
+tiktoken
+deskew
+tifffile
+qwen-vl-utils  # For Qwen2.5-VL vision processing
