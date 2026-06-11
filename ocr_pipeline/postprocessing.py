@@ -1,73 +1,60 @@
 import logging
 import re
-from io import StringIO
 
 import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-SEPARATOR_RE = re.compile(r"^\| ?:?-{3,}:? ?(?:\| ?:?-{3,}:? ?)*\|$")
-TABLE_RE = re.compile(
-    r"(\|.+\|\n\| ?:?-{3,}:? ?(?:\| ?:?-{3,}:? ?)*\|\n(?:\|.+\|\n?)+)",
-    re.MULTILINE,
-)
+DAY_RE = re.compile(r"Day\s+(\d+)[:\s]\s*(.*)", re.IGNORECASE)
+
+FIELD_PATTERNS = {
+    "attached_therm": r"(?:Attached\s*Thermometer)\s*[:\s]*([^,]+)",
+    "baro_uncorrected": r"(?:Barometer\s*Uncorrected|Uncorrected)\s*[:\s]*(\d+\.?\d*)",
+    "baro_corrected": r"(?:Barometer\s*Corrected|Corrected)\s*[:\s]*([^,]+)",
+    "dry_bulb": r"(?:Dry\s*[Bb]ulb)\s*[:\s]*(\d+\.?\d*)",
+    "wet_bulb": r"(?:Wet\s*[Bb]ulb)\s*[:\s]*(\d+\.?\d*)",
+    "wind_dir": r"(?:Wind\s*Direction)[:\s]*([A-Z]+[^,]*)",
+    "wind_force": r"(?:Wind\s*Force)[:\s]*(\d+[^,]*)",
+    "cloud_amount": r"(?:Cloud\s*Amount)[:\s]*(\d+)",
+    "cloud_form": r"(?:Cloud\s*Form)[:\s]*([^,]+)",
+    "weather": r"Weather[:\s]*([^,]+)",
+    "rain_since_last": r"(?:Rain)\s*[:\s]*(\d+\.?\d*)",
+}
 
 
-def clean_markdown(md: str) -> str:
-    md = re.sub(r"-{3,}", "", md)
-    md = re.sub(r"\n{3,}", "\n\n", md)
-    md = re.sub(r"[^\S\n]+", " ", md)
-    md = md.strip()
-    return md
-
-
-def extract_tables_from_markdown(md_text: str) -> list[pd.DataFrame]:
-    tables = []
-    for match in TABLE_RE.finditer(md_text):
-        raw = match.group(0)
-        lines = [
-            l for l in raw.strip().splitlines()
-            if not SEPARATOR_RE.match(l)
-        ]
-        csv_lines = [
-            re.sub(r"^\||\|$", "", l).replace("|", ",")
-            for l in lines
-        ]
-        try:
-            df = pd.read_csv(StringIO("\n".join(csv_lines)))
-            tables.append(df)
-        except Exception as e:
-            logger.warning("Failed to parse table: %s", e)
-            continue
-    return tables
-
-
-def extract_key_values(md_text: str) -> dict:
-    kv = {}
-    patterns = [
-        r"^([A-Za-z][^.\n]{2,40}?)\s*\.{3,}\s*(.+)$",
-        r"^([A-Za-z][^.:\n]{2,40}?)\s*[:\-–]\s*(.+)$",
-        r"^(Month\s+and\s+Year)\s+(.+)$",
-        r"^([A-Z][a-z]{2,})\s+(?=.*[0-9])(.+)$",
-    ]
-    for line in md_text.splitlines():
+def parse_output(text: str) -> list[dict]:
+    records = []
+    for line in text.strip().splitlines():
         line = line.strip()
-        for pat in patterns:
-            m = re.match(pat, line)
-            if m:
-                kv[m.group(1).strip()] = m.group(2).strip()
-                break
-    return kv
+        m = DAY_RE.match(line)
+        if not m:
+            continue
+        day = int(m.group(1))
+        if day < 1 or day > 31:
+            continue
+        rest = m.group(2)
+        rec = {"day": day}
+        for field, pattern in FIELD_PATTERNS.items():
+            fm = re.search(pattern, rest, re.IGNORECASE)
+            if fm:
+                val = fm.group(1).strip().strip(".,-\"")
+                if val and val.lower() not in ("", "-", "ins", "null", "none"):
+                    rec[field] = val
+        records.append(rec)
+    return records
 
 
-def postprocess_markdown(
-    md_pages: list[str],
-    tables_only: bool = False,
-) -> tuple[list[pd.DataFrame], dict]:
-    all_tables, all_kv = [], {}
+def postprocess_markdown(md_pages: list[str]) -> pd.DataFrame:
+    all_records = []
     for md in md_pages:
-        all_tables.extend(extract_tables_from_markdown(md))
-        if not tables_only:
-            md_clean = clean_markdown(md)
-            all_kv.update(extract_key_values(md_clean))
-    return all_tables, all_kv
+        records = parse_output(md)
+        all_records.extend(records)
+
+    if not all_records:
+        logger.warning("No records parsed from model output")
+        return pd.DataFrame()
+
+    df = pd.DataFrame(all_records)
+    if "day" in df.columns:
+        df = df.sort_values("day")
+    return df

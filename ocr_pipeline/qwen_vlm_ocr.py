@@ -62,8 +62,8 @@ class QwenVLMRunner:
         self.close()
 
     @torch.inference_mode()
-    def run_ocr(self, pil_img: Image.Image, ocr_type: str = "format") -> str:
-        prompt = _build_prompt(ocr_type)
+    def run_ocr(self, pil_img: Image.Image) -> str:
+        prompt = self._build_rainfall_prompt()
 
         messages = [
             {
@@ -105,29 +105,28 @@ class QwenVLMRunner:
         )
         return output_text[0].strip()
 
+    def _build_rainfall_prompt(self) -> str:
+        return """List every day's data from this weather observation table. Output exactly:
+Day 1: attached_thermometer, barometer_uncorrected, barometer_corrected, dry_bulb, wet_bulb, wind_direction, wind_force, cloud_amount, cloud_form, weather, rain
+Day 2: ...
+...
+Day 31: ...
+
+Use empty for missing values. Only output these 31 lines."""
+
     def batch_ocr(
         self,
         images: list[Image.Image],
-        ocr_type: str = "format",
     ) -> list[str]:
         results = []
         for img in tqdm(images, desc="Qwen2.5-VL OCR"):
             try:
-                md = self.run_ocr(img, ocr_type=ocr_type)
+                md = self.run_ocr(img)
                 results.append(md)
             except Exception as e:
                 logger.error(f"Failed to process image: {e}")
                 results.append("")
         return results
-
-
-def _build_prompt(ocr_type: str) -> str:
-    prompts = {
-        "ocr": "Extract all text from this image without any formatting.",
-        "format": "Extract all text from this image preserving the layout. Use markdown format including tables where present.",
-        "fine": "Perform detailed OCR extraction with precise layout preservation. Include all text, tables, and structural elements in markdown format.",
-    }
-    return prompts.get(ocr_type, prompts["format"])
 
 
 def _get_vram_gb() -> Optional[float]:
@@ -141,8 +140,7 @@ def _get_vram_gb() -> Optional[float]:
 
 def ocr_images(
     images: list[Image.Image],
-    ocr_type: str = "format",
     load_in_4bit: bool = True,
 ) -> list[str]:
     with QwenVLMRunner(load_in_4bit=load_in_4bit) as runner:
-        return runner.batch_ocr(images, ocr_type=ocr_type)
+        return runner.batch_ocr(images)

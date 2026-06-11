@@ -36,13 +36,8 @@ def preprocess_image(pil_img: Image.Image) -> Image.Image:
 
     grey = cv2.fastNlMeansDenoising(grey, h=10)
 
-    binary = cv2.adaptiveThreshold(
-        grey, 255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY, 31, 10,
-    )
-
-    return Image.fromarray(binary)
+    rgb = cv2.cvtColor(grey, cv2.COLOR_GRAY2RGB)
+    return Image.fromarray(rgb)
 
 
 def load_input(path: str) -> list[Image.Image]:
