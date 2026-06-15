@@ -5,11 +5,11 @@ from pathlib import Path
 import pandas as pd
 
 from ocr_pipeline import (
-    load_input,
-    preprocess_images,
-    get_ocr_images_function,
-    postprocess_markdown,
     build_xlsx,
+    get_ocr_images_function,
+    load_input,
+    postprocess_markdown,
+    preprocess_images,
 )
 
 
@@ -32,12 +32,7 @@ def run_pipeline(
     df = postprocess_markdown(md_pages)
     print(f"[4/5] Post-processing: {len(df)} day(s) extracted")
 
-    if df.empty:
-        records = []
-    else:
-        records = df.to_dict("records")
-
-    build_xlsx(records, {}, md_pages, output_xlsx)
+    build_xlsx(df, md_pages, output_xlsx)
     print(f"[5/5] Saved \u2192 {output_xlsx}")
 
 
@@ -66,5 +61,9 @@ if __name__ == "__main__":
         help="Disable 4-bit quantization",
     )
     args = parser.parse_args()
-    run_pipeline(args.input, args.output,
-                 ocr_model=args.ocr_model, load_in_4bit=args.load_in_4bit)
+    run_pipeline(
+        args.input,
+        args.output,
+        ocr_model=args.ocr_model,
+        load_in_4bit=args.load_in_4bit,
+    )

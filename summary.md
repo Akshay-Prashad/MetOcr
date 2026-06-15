@@ -232,7 +232,7 @@ Day | Attached Therm | Baro Uncorr | Baro Corr | Dry Bulb | Wet Bulb | Wind Dir 
 Day 1: Attached Thermometer ins., Barometer Uncorrected 52, Barometer Corrected 30-60-030-523, Dry bulb 47, Wet bulb 47, Wind Direction SSW, Wind Force 1, Cloud Amount 8, Cloud Form A.S., Weather - , Rain 0
 ```
 
-## Recommendations
+## Further Improvemnts
 
 1. **Fine-tuning**: LoRA fine-tuning on ~1000 labeled images should improve accuracy from 11% to ~90%+ (per Rainfall Rescue findings).
 

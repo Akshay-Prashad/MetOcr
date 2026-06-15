@@ -37,34 +37,25 @@ HEADER_ROWS = [
 
 COLUMN_COUNT = 46
 
-# Mapping from JSON field -> (morning_xlsx_col, afternoon_xlsx_col, extras_xlsx_col)
-# xlsx columns are 1-indexed
-FIELD_MAP = {
-    "attached_therm":      (3, None, None),
-    "baro_uncorrected":    (4, None, None),
-    "baro_corrected":      (5, None, None),
-    "dry_bulb":            (6, None, None),
-    "wet_bulb":            (7, None, None),
-    "dew_point":           (8, None, None),
-    "vapour_pressure":     (9, None, None),
-    "humidity_pct":        (10, None, None),
-    "wind_dir":            (11, None, None),
-    "wind_force":          (12, None, None),
-    "cloud_amount":        (13, None, None),
-    "cloud_form":          (14, None, None),
-    "weather":             (16, None, None),
-    "rain_since_last":     (17, None, None),
-    "max_temp":            (None, None, 37),
-    "min_temp":            (None, None, 38),
-    "sunshine":            (None, None, 44),
-    "remarks":             (None, None, 46),
+# Mapping from DataFrame column names to XLSX column positions (1-indexed)
+FIELD_TO_COL = {
+    "attached_thermometer": 2,
+    "barometer_uncorrected": 3,
+    "barometer_corrected": 4,
+    "dry_bulb": 5,
+    "wet_bulb": 6,
+    "wind_direction": 10,
+    "wind_force": 11,
+    "cloud_amount": 12,
+    "cloud_form": 13,
+    "weather": 15,
+    "rain_since_last": 17,
 }
 
 
 def build_xlsx(
-    records: list[dict],
-    kv_data: dict,
-    raw_md_pages: list[str],
+    df: pd.DataFrame,
+    raw_md_pages: list[str | dict],
     output_path: str,
 ):
     wb = openpyxl.Workbook()
@@ -72,15 +63,13 @@ def build_xlsx(
     ws.title = "Sheet1"
 
     _write_headers(ws)
-
-    if records:
-        _write_records(ws, records)
+    _write_data(ws, df)
 
     ws_raw = wb.create_sheet("Raw OCR")
     row = 1
     for page_num, md in enumerate(raw_md_pages, 1):
         ws_raw.cell(row, 1, f"--- Page {page_num} ---").font = Font(bold=True)
-        ws_raw.cell(row + 1, 1, md)
+        ws_raw.cell(row + 1, 1, str(md))
         row += 2
     ws_raw.column_dimensions["A"].width = 120
 
@@ -94,47 +83,28 @@ def _write_headers(ws):
                 ws.cell(r_idx, c_idx, val)
 
 
-FIELD_TO_COL = {
-    "attached_therm": 2,
-    "baro_uncorrected": 3,
-    "baro_corrected": 4,
-    "dry_bulb": 5,
-    "wet_bulb": 6,
-    "wind_dir": 10,
-    "wind_force": 11,
-    "cloud_amount": 12,
-    "cloud_form": 13,
-    "weather": 15,
-    "rain_since_last": 17,
-}
-
-
-def _write_records(ws, records: list[dict]):
-    data_start = 14
-    for rec in records:
-        day = _safe_int(rec.get("day"))
-        if day is None or day < 1 or day > 31:
+def _write_data(ws, df: pd.DataFrame):
+    data_start = 14  # First data row (day 1)
+    
+    for _, row in df.iterrows():
+        day = row.get("Day")
+        if day is None:
+            continue
+        try:
+            day_num = int(float(str(day)))
+        except (ValueError, TypeError):
+            continue
+        if day_num < 1 or day_num > 31:
             continue
 
-        xlsx_row = data_start + day - 1
+        xlsx_row = data_start + day_num - 1
         xlsx_row_46 = [None] * COLUMN_COUNT
-        xlsx_row_46[1] = day
+        xlsx_row_46[1] = day_num  # Day column
 
         for field, col_idx in FIELD_TO_COL.items():
-            val = rec.get(field)
-            if val is not None:
-                s = str(val).strip()
-                if s and s.lower() != "nan":
-                    xlsx_row_46[col_idx] = val
+            val = row.get(field)
+            if val is not None and str(val).strip() not in ["", "nan", "null"]:
+                xlsx_row_46[col_idx] = val
 
         for c_idx, val in enumerate(xlsx_row_46, 1):
             ws.cell(xlsx_row, c_idx, val)
-
-
-def _safe_int(v):
-    if v is None:
-        return None
-    try:
-        return int(float(str(v).strip()))
-    except (ValueError, TypeError):
-        return None

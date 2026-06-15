@@ -1,60 +1,83 @@
 import logging
-import re
-
+from typing import List, Dict, Any, Optional
 import pandas as pd
+import re
 
 logger = logging.getLogger(__name__)
 
-DAY_RE = re.compile(r"Day\s+(\d+)[:\s]\s*(.*)", re.IGNORECASE)
-
-FIELD_PATTERNS = {
-    "attached_therm": r"(?:Attached\s*Thermometer)\s*[:\s]*([^,]+)",
-    "baro_uncorrected": r"(?:Barometer\s*Uncorrected|Uncorrected)\s*[:\s]*(\d+\.?\d*)",
-    "baro_corrected": r"(?:Barometer\s*Corrected|Corrected)\s*[:\s]*([^,]+)",
-    "dry_bulb": r"(?:Dry\s*[Bb]ulb)\s*[:\s]*(\d+\.?\d*)",
-    "wet_bulb": r"(?:Wet\s*[Bb]ulb)\s*[:\s]*(\d+\.?\d*)",
-    "wind_dir": r"(?:Wind\s*Direction)[:\s]*([A-Z]+[^,]*)",
-    "wind_force": r"(?:Wind\s*Force)[:\s]*(\d+[^,]*)",
-    "cloud_amount": r"(?:Cloud\s*Amount)[:\s]*(\d+)",
-    "cloud_form": r"(?:Cloud\s*Form)[:\s]*([^,]+)",
-    "weather": r"Weather[:\s]*([^,]+)",
-    "rain_since_last": r"(?:Rain)\s*[:\s]*(\d+\.?\d*)",
-}
-
-
-def parse_output(text: str) -> list[dict]:
-    records = []
-    for line in text.strip().splitlines():
-        line = line.strip()
-        m = DAY_RE.match(line)
-        if not m:
-            continue
-        day = int(m.group(1))
-        if day < 1 or day > 31:
-            continue
-        rest = m.group(2)
-        rec = {"day": day}
-        for field, pattern in FIELD_PATTERNS.items():
-            fm = re.search(pattern, rest, re.IGNORECASE)
-            if fm:
-                val = fm.group(1).strip().strip(".,-\"")
-                if val and val.lower() not in ("", "-", "ins", "null", "none"):
-                    rec[field] = val
-        records.append(rec)
-    return records
-
-
-def postprocess_markdown(md_pages: list[str]) -> pd.DataFrame:
-    all_records = []
-    for md in md_pages:
-        records = parse_output(md)
-        all_records.extend(records)
-
-    if not all_records:
-        logger.warning("No records parsed from model output")
+def postprocess_markdown(column_data: List[Dict[str, List[str]]]) -> pd.DataFrame:
+    """
+    Merges column-by-column extraction results into a single DataFrame.
+    
+    Args:
+        column_data: List of dicts (one per page). 
+                     Each dict: {col_name: [31 values]}
+    
+    Returns:
+        DataFrame with rows as days (1-31) and columns as extracted fields.
+    """
+    if not column_data:
         return pd.DataFrame()
 
-    df = pd.DataFrame(all_records)
-    if "day" in df.columns:
-        df = df.sort_values("day")
-    return df
+    page_results = column_data[0]
+    
+    # Initialize data for 31 days
+    data = []
+    for day in range(1, 32):
+        day_row = {"Day": day}
+        
+        # Extract each defined column
+        for col_name, values in page_results.items():
+            try:
+                val = values[day-1] if len(values) >= day else ""
+            except (IndexError, TypeError):
+                val = ""
+                
+            val = str(val).strip()
+            if val in ["-", "null", "nan", "None", ""]:
+                val = None
+            
+            # Type casting for specific columns with validation
+            val = _clean_value(col_name, val)
+            day_row[col_name] = val
+            
+        data.append(day_row)
+        
+    return pd.DataFrame(data)
+
+def _clean_value(col_name: str, val: Any) -> Optional[Any]:
+    if val is None:
+        return None
+    val = str(val).strip()
+    if val in ["-", "null", "nan", "None", ""]:
+        return None
+    
+    # Numeric columns
+    if col_name in ["attached_thermometer", "dry_bulb", "wet_bulb", "wind_force", "cloud_amount"]:
+        return _to_int(val)
+    elif col_name in ["barometer_uncorrected", "barometer_corrected"]:
+        numeric = _to_float(val)
+        return numeric
+    
+    # Wind direction - compass abbreviations
+    if col_name == "wind_direction":
+        # Normalize common abbreviations
+        abbreviations = {
+            "N": "N", "NNE": "NNE", "NE": "NE", "ENE": "ENE",
+            "E": "E", "ESE": "ESE", "SE": "SE", "SSE": "SSE",
+            "S": "S", "SSW": "SSW", "SW": "SW", "WSW": "WSW",
+            "W": "W", "WNW": "WNW", "NW": "NW", "NNW": "NNW",
+        }
+        return abbreviations.get(val.upper(), val)
+    
+    return val
+
+def _to_int(val: Any) -> Optional[int]:
+    if val is None: return None
+    match = re.search(r'(-?\d+)', str(val))
+    return int(match.group(1)) if match else None
+
+def _to_float(val: Any) -> Optional[float]:
+    if val is None: return None
+    match = re.search(r'(-?\d*\.?\d+)', str(val))
+    return float(match.group(1)) if match else None
