@@ -18,6 +18,7 @@ def run_pipeline(
     output_xlsx: str,
     ocr_model: str = "qwen_vlm",
     load_in_4bit: bool = True,
+    adapter_path: str = None,
 ):
     raw_images = load_input(input_path)
     print(f"[1/5] Loaded {len(raw_images)} page(s) from {Path(input_path).name}")
@@ -25,7 +26,7 @@ def run_pipeline(
     clean_images = preprocess_images(raw_images)
     print("[2/5] Pre-processing complete")
 
-    ocr_func = get_ocr_images_function(ocr_model, load_in_4bit=load_in_4bit)
+    ocr_func = get_ocr_images_function(ocr_model, load_in_4bit=load_in_4bit, adapter_path=adapter_path)
     md_pages = ocr_func(clean_images)
     print("[3/5] OCR inference complete")
 
@@ -60,10 +61,16 @@ if __name__ == "__main__":
         dest="load_in_4bit",
         help="Disable 4-bit quantization",
     )
+    parser.add_argument(
+        "--adapter-path",
+        default=None,
+        help="Path to LoRA adapter directory",
+    )
     args = parser.parse_args()
     run_pipeline(
         args.input,
         args.output,
         ocr_model=args.ocr_model,
         load_in_4bit=args.load_in_4bit,
+        adapter_path=args.adapter_path,
     )

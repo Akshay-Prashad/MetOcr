@@ -102,7 +102,7 @@ class QwenVLMRunner:
 
         if adapter_path and Path(adapter_path).exists():
             from peft import PeftModel
-            self.model = PeftModel.from_pretrained(self.model, adapter_path)
+            self.model = PeftModel.from_pretrained(self.model, adapter_path, local_files_only=True)
             logger.info(f"Loaded LoRA adapter from {adapter_path}")
 
         self.model.eval()
@@ -205,8 +205,9 @@ def _get_vram_gb() -> Optional[float]:
 def ocr_images(
     images: list[Image.Image],
     load_in_4bit: bool = True,
+    adapter_path: str = None,
 ) -> list[Dict[str, List[str]]]:
-    with QwenVLMRunner(load_in_4bit=load_in_4bit) as runner:
+    with QwenVLMRunner(load_in_4bit=load_in_4bit, adapter_path=adapter_path) as runner:
         results = []
         for img in (pbar := tqdm(images, desc="Page")):
             pbar.set_description("Page")
