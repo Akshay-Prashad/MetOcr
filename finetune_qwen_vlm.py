@@ -2,23 +2,21 @@
 Fine-tune Qwen2.5-VL-3B-Instruct with QLoRA on weather sheet column extraction.
 
 Usage:
-  python finetune_qwen_vlm.py --data_dir Files/ --output_dir adapters/
+  python finetune_qwen_vlm.py --data_dir Files/ --output_dir adapters/ --num_epochs 50
   python finetune_qwen_vlm.py --data_dir Files/ --output_dir adapters/ --infer_only
 """
 
 import argparse
-import json
 import logging
 import math
-import os
+import random
 import re
 import sys
-import time
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import torch
+import torchvision.transforms as T
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
@@ -33,13 +31,17 @@ from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, Pe
 
 sys.path.insert(0, str(Path(__file__).parent))
 from ocr_pipeline.preprocessing import load_input, preprocess_images
-from ocr_pipeline.qwen_vlm_ocr import COLUMN_DESCRIPTIONS, COLUMN_PROMPT
+from ocr_pipeline.qwen_vlm_ocr import ALL_COLUMNS, COLUMN_DESCRIPTIONS, SINGLE_COLUMN_PROMPT
 from ocr_pipeline.xlsx_builder import FIELD_TO_COL
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
 TARGET_COLUMNS = list(FIELD_TO_COL.keys())
+AUGMENT_TRANSFORM = T.Compose([
+    T.RandomAffine(degrees=1.5, translate=(0.01, 0.01), scale=(0.98, 1.02)),
+    T.ColorJitter(brightness=0.1, contrast=0.1),
+])
 
 
 def load_ground_truth(xlsx_path: str) -> Dict[str, List[Optional[Any]]]:
@@ -47,22 +49,21 @@ def load_ground_truth(xlsx_path: str) -> Dict[str, List[Optional[Any]]]:
     import openpyxl
     wb = openpyxl.load_workbook(xlsx_path)
     ws = wb.active
-    data_start = 13
+    data_start = 18
     gt = {}
     for col_name, col_idx in FIELD_TO_COL.items():
-        gt[col_name] = [ws.cell(data_start + day, col_idx + 1).value for day in range(31)]
+        gt[col_name] = [ws.cell(data_start + day, col_idx).value for day in range(31)]
     return gt
 
 
 def build_output_text(values: List[Optional[Any]]) -> str:
-    """Convert 31 column values to 'Day N: value' format."""
     lines = []
     for day_num in range(1, 32):
         val = values[day_num - 1]
         if val is None or str(val).strip() in ["", "-"]:
-            lines.append(f"Day {day_num}: -")
+            lines.append(f"D{day_num}: -")
         else:
-            lines.append(f"Day {day_num}: {val}")
+            lines.append(f"D{day_num}: {val}")
     return "\n".join(lines)
 
 
@@ -71,8 +72,7 @@ def process_vision_info_safe(messages):
     return process_vision_info(messages)
 
 
-def resize_for_vlm(image: Image.Image, max_size: int = 768) -> Image.Image:
-    """Resize image so longest side is at most max_size, preserving aspect ratio."""
+def resize_for_vlm(image: Image.Image, max_size: int = 384) -> Image.Image:
     w, h = image.size
     if max(w, h) <= max_size:
         return image
@@ -83,7 +83,6 @@ def resize_for_vlm(image: Image.Image, max_size: int = 768) -> Image.Image:
 
 
 def load_all_data(data_dir: str, max_image_size: int = 768) -> List[Dict]:
-    """Load all TIFF/XLSX pairs and build training pairs."""
     data_dir = Path(data_dir)
     tiff_files = sorted(data_dir.glob("*_c.tif"))
     all_pairs = []
@@ -99,8 +98,8 @@ def load_all_data(data_dir: str, max_image_size: int = 768) -> List[Dict]:
         image = resize_for_vlm(clean_images[0], max_size=max_image_size)
         gt = load_ground_truth(str(xlsx_path))
         for col_name in TARGET_COLUMNS:
-            desc = COLUMN_DESCRIPTIONS.get(col_name, "")
-            prompt = COLUMN_PROMPT.format(col_name=col_name, description=desc)
+            description = COLUMN_DESCRIPTIONS.get(col_name, "")
+            prompt = SINGLE_COLUMN_PROMPT.format(col_name=col_name, description=description)
             output_text = build_output_text(gt.get(col_name, [""] * 31))
             all_pairs.append({
                 "image": image,
@@ -108,14 +107,16 @@ def load_all_data(data_dir: str, max_image_size: int = 768) -> List[Dict]:
                 "prompt": prompt,
                 "output_text": output_text,
             })
+
     logger.info(f"Total training pairs: {len(all_pairs)}")
     return all_pairs
 
 
 class WeatherDataset(Dataset):
-    def __init__(self, data_pairs: List[Dict], processor: AutoProcessor):
+    def __init__(self, data_pairs: List[Dict], processor: AutoProcessor, augment: bool = False):
         self.data = data_pairs
         self.processor = processor
+        self.augment = augment
 
     def __len__(self):
         return len(self.data)
@@ -126,7 +127,9 @@ class WeatherDataset(Dataset):
         prompt = item["prompt"]
         output_text = item["output_text"]
 
-        # Build conversation (user prompt only — we'll append output ourselves)
+        if self.augment:
+            image = AUGMENT_TRANSFORM(image)
+
         messages = [
             {
                 "role": "user",
@@ -152,16 +155,13 @@ class WeatherDataset(Dataset):
         pixel_values = inputs["pixel_values"]
         image_grid_thw = inputs.get("image_grid_thw")
 
-        # Tokenize the output
         output_ids = self.processor.tokenizer(
             output_text, add_special_tokens=False, return_tensors="pt"
         )["input_ids"][0]
 
-        # Concatenate: input_ids + output_ids
         full_input_ids = torch.cat([inputs["input_ids"][0], output_ids])
         full_attention = torch.ones_like(full_input_ids)
 
-        # Labels: -100 for input tokens, output token IDs for output tokens
         labels = torch.full_like(full_input_ids, -100)
         labels[prompt_len:] = output_ids
 
@@ -198,20 +198,24 @@ def collate_fn(batch):
 def setup_model(
     model_id: str = "Qwen/Qwen2.5-VL-3B-Instruct",
     adapter_path: Optional[str] = None,
+    max_gpu_mem: str = "5GB",
 ):
     quant_config = BitsAndBytesConfig(
         load_in_4bit=True,
-        bnb_4bit_compute_dtype=torch.float16,
+        bnb_4bit_compute_dtype=torch.float32,
         bnb_4bit_use_double_quant=True,
         bnb_4bit_quant_type="nf4",
     )
-    model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-        model_id,
-        device_map="auto",
+    load_kwargs = dict(
+        device_map="cpu",
         quantization_config=quant_config,
         low_cpu_mem_usage=True,
-        torch_dtype=torch.float16,
+        torch_dtype=torch.float32,
     )
+    model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+        model_id, **load_kwargs
+    )
+
     model.config.use_cache = False
     model.gradient_checkpointing_enable()
     model = prepare_model_for_kbit_training(model)
@@ -221,10 +225,9 @@ def setup_model(
         logger.info(f"Loaded adapter from {adapter_path}")
     else:
         lora_config = LoraConfig(
-            r=16,
-            lora_alpha=32,
-            target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                            "gate_proj", "up_proj", "down_proj"],
+            r=4,
+            lora_alpha=8,
+            target_modules=["q_proj", "v_proj"],
             lora_dropout=0.05,
             bias="none",
             task_type="CAUSAL_LM",
@@ -261,49 +264,45 @@ def parse_extracted(text: str) -> Dict[int, str]:
 def train():
     parser = argparse.ArgumentParser(description="Fine-tune Qwen2.5-VL for weather sheet OCR")
     parser.add_argument("--data_dir", default="Files/")
-    parser.add_argument("--output_dir", default="adapters/")
+    parser.add_argument("--output_dir", default="adapters_test/")
     parser.add_argument("--model_id", default="Qwen/Qwen2.5-VL-3B-Instruct")
     parser.add_argument("--adapter_path", default=None, help="Load existing adapter to continue training")
-    parser.add_argument("--num_epochs", type=int, default=3)
-    parser.add_argument("--batch_size", type=int, default=1)
-    parser.add_argument("--grad_accum_steps", type=int, default=4)
-    parser.add_argument("--lr", type=float, default=2e-4)
+    parser.add_argument("--num_epochs", type=int, default=5)
+    parser.add_argument("--batch_size", type=int, default=1, help="Per-device batch size (1 due to VRAM)")
+    parser.add_argument("--grad_accum_steps", type=int, default=8, help="Gradient accumulation steps (effective batch = batch_size * grad_accum)")
+    parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--infer_only", action="store_true", help="Skip training, just test inference")
     args = parser.parse_args()
 
     set_seed(args.seed)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu")
 
-    # ----- Load data -----
     data_pairs = load_all_data(args.data_dir)
     if len(data_pairs) == 0:
         logger.error("No training data found!")
         return
 
-    split_idx = int(len(data_pairs) * 0.85)
+    random.shuffle(data_pairs)
+    split_idx = max(1, int(len(data_pairs) * 0.8))
     train_pairs = data_pairs[:split_idx]
     val_pairs = data_pairs[split_idx:]
     logger.info(f"Train: {len(train_pairs)}, Val: {len(val_pairs)}")
 
-    # ----- Setup model -----
     model = setup_model(args.model_id, args.adapter_path)
     processor = AutoProcessor.from_pretrained(args.model_id)
 
-    # ----- Create datasets -----
-    train_ds = WeatherDataset(train_pairs, processor)
-    val_ds = WeatherDataset(val_pairs, processor) if val_pairs else None
+    train_ds = WeatherDataset(train_pairs, processor, augment=(not args.infer_only))
+    val_ds = WeatherDataset(val_pairs, processor, augment=False) if val_pairs else None
 
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn, num_workers=0)
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=0) if val_ds else None
 
-    # ----- Inference-only mode -----
     if args.infer_only:
-        col_names = list(FIELD_TO_COL.keys())
-        logger.info("Inference-only mode. Testing on first page...")
-        image = data_pairs[0]["image"]
-        prompt = data_pairs[0]["prompt"]
-        col_name = data_pairs[0]["col_name"]
+        logger.info("Inference-only mode. Testing with single-column prompt...")
+        item = data_pairs[0]
+        image = item["image"]
+        prompt = item["prompt"]
 
         messages = [
             {"role": "user", "content": [{"type": "image", "image": image}, {"type": "text", "text": prompt}]}
@@ -314,22 +313,22 @@ def train():
 
         model.eval()
         with torch.inference_mode():
-            generated = model.generate(**inputs, max_new_tokens=512, do_sample=False)
+            generated = model.generate(**inputs, max_new_tokens=1024, do_sample=False)
         generated_trimmed = generated[0][inputs["input_ids"].shape[1]:]
         output = processor.decode(generated_trimmed, skip_special_tokens=True)
-        logger.info(f"Column: {col_name}\nOutput:\n{output}")
+        logger.info(f"Column: {item['col_name']}\nOutput:\n{output}")
         return
 
-    # ----- Optimizer & scheduler -----
-    from bitsandbytes.optim import AdamW8bit
-    optimizer = AdamW8bit(model.parameters(), lr=args.lr)
+    from torch.optim import AdamW
+    optimizer = AdamW(model.parameters(), lr=args.lr)
     total_steps = math.ceil(len(train_loader) * args.num_epochs / args.grad_accum_steps)
-    scheduler = get_scheduler("cosine", optimizer=optimizer, num_warmup_steps=int(0.05 * total_steps), num_training_steps=total_steps)
+    warmup_steps = max(1, int(0.1 * total_steps))
+    scheduler = get_scheduler("cosine", optimizer=optimizer, num_warmup_steps=warmup_steps, num_training_steps=total_steps)
 
-    # ----- Training loop -----
     global_step = 0
+    last_val_step = -1
     best_val_loss = float("inf")
-    logger.info(f"Starting training for {args.num_epochs} epochs, {total_steps} steps")
+    logger.info(f"Starting training for {args.num_epochs} epochs, {total_steps} steps, warmup={warmup_steps}")
 
     for epoch in range(args.num_epochs):
         model.train()
@@ -351,10 +350,11 @@ def train():
                 optimizer.zero_grad()
                 global_step += 1
 
-            pbar.set_postfix({"loss": f"{loss.item() * args.grad_accum_steps:.4f}", "lr": f"{scheduler.get_last_lr()[0]:.2e}"})
+            current_lr = scheduler.get_last_lr()[0] if scheduler is not None else args.lr
+            pbar.set_postfix({"loss": f"{loss.item() * args.grad_accum_steps:.4f}", "lr": f"{current_lr:.2e}"})
 
-            # Validation
-            if val_loader and global_step > 0 and global_step % 10 == 0:
+            if val_loader and global_step > 0 and global_step % 10 == 0 and global_step != last_val_step:
+                last_val_step = global_step
                 val_loss = evaluate(model, val_loader, processor, device)
                 logger.info(f"Step {global_step}: val_loss={val_loss:.4f}")
                 if val_loss < best_val_loss:
@@ -367,7 +367,6 @@ def train():
         avg_epoch_loss = epoch_loss / len(train_loader)
         logger.info(f"Epoch {epoch+1} avg_loss={avg_epoch_loss:.4f}")
 
-    # Final save
     model.save_pretrained(args.output_dir)
     processor.save_pretrained(args.output_dir)
     logger.info(f"Final adapter saved to {args.output_dir}")

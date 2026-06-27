@@ -1,124 +1,104 @@
+#test_pipeline.py
 #!/usr/bin/env python3
-"""Test the OCR pipeline with _c.pdf files from the Files/ directory."""
+"""Test the OCR pipeline with _c.tif files from the Files/ directory."""
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import torch
+import pandas as pd
 from PIL import Image
 
 FILES_DIR = Path(__file__).parent / "Files"
 OUTPUT_DIR = Path(__file__).parent / "output"
 
 
-def get_c_pdfs() -> list[Path]:
-    pdfs = sorted(FILES_DIR.glob("*_c.pdf"))
-    print(f"Found {len(pdfs)} _c.pdf files")
-    return pdfs
+def get_c_tifs() -> list[Path]:
+    tifs = sorted(FILES_DIR.glob("*_c.tif"))
+    print(f"Found {len(tifs)} _c.tif files")
+    return tifs
 
 
 def test_preprocessing():
-    """Test that preprocessing works on a single PDF."""
-    from ocr_pipeline.preprocessing import pdf_to_images, preprocess_image
+    """Test that preprocessing works on a single TIFF."""
+    from ocr_pipeline.preprocessing import preprocess_image, tiff_to_images
 
-    pdfs = get_c_pdfs()
-    if not pdfs:
-        print("SKIP: no _c.pdf files found")
+    tifs = get_c_tifs()
+    if not tifs:
+        print("SKIP: no _c.tif files found")
         return
 
-    images = pdf_to_images(str(pdfs[0]), dpi=150)
-    assert len(images) > 0, f"No pages extracted from {pdfs[0].name}"
+    images = tiff_to_images(str(tifs[0]))
+    assert len(images) > 0, f"No pages extracted from {tifs[0].name}"
     processed = preprocess_image(images[0])
     assert processed is not None
-    print(f"  Preprocessing OK: {pdfs[0].name} → {processed.size}")
+    print(f"  Preprocessing OK: {tifs[0].name} -> {processed.size}")
 
 
 def test_postprocessing():
-    """Test post-processing with synthetic markdown."""
-    from ocr_pipeline.postprocessing import clean_markdown, extract_key_values, extract_tables_from_markdown
+    """Test post-processing with synthetic column data."""
+    from ocr_pipeline.postprocessing import postprocess_markdown
 
-    sample_md = """| Day | Temp | Rain |
-|-----|------|------|
-| 1   | 22   | 0    |
-| 2   | 24   | 5    |
+    column_data = [
+        {
+            "dry_bulb": ["50", "52", "51", "49", "53", "55", "54", "52", "51", "50",
+                         "48", "47", "46", "45", "44", "43", "42", "41", "40", "39",
+                         "38", "37", "36", "35", "34", "33", "32", "31", "30", "29", "28"],
+            "wet_bulb": ["48", "50", "49", "47", "51", "53", "52", "50", "49", "48",
+                         "46", "45", "44", "43", "42", "41", "40", "39", "38", "37",
+                         "36", "35", "34", "33", "32", "31", "30", "29", "28", "27", "26"],
+            "wind_direction": ["N"] * 31,
+            "wind_force": ["3"] * 31,
+            "cloud_amount": ["5"] * 31,
+            "cloud_form": ["Cu"] * 31,
+            "weather": ["B"] * 31,
+            "rain_since_last": ["0"] * 31,
+            "attached_thermometer": ["50"] * 31,
+            "barometer_uncorrected": ["29.8"] * 31,
+            "barometer_corrected": ["30.1"] * 31,
+        }
+    ]
 
-Station Name: Reading
-Date ......... 2024-01-01
-"""
-    tables = extract_tables_from_markdown(sample_md)
-    assert len(tables) == 1, f"Expected 1 table, got {len(tables)}"
-    assert tables[0].shape == (2, 3), f"Expected (2,3), got {tables[0].shape}"
-
-    cleaned = clean_markdown(sample_md)
-    kv = extract_key_values(cleaned)
-    assert "Station Name" in kv
-    assert "Date" in kv
-    print(f"  Post-processing OK: {len(tables)} table(s), {len(kv)} field(s)")
+    df = postprocess_markdown(column_data)
+    assert len(df) == 31, f"Expected 31 rows, got {len(df)}"
+    assert "dry_bulb" in df.columns
+    assert df["dry_bulb"].iloc[0] == 50
+    print(f"  Post-processing OK: {len(df)} rows, {len(df.columns)} columns")
 
 
 def test_xlsx_builder():
     """Test XLSX generation."""
-    import pandas as pd
     from ocr_pipeline.xlsx_builder import build_xlsx
 
-    tables = [pd.DataFrame({"A": [1, 2], "B": [3, 4]})]
-    kv = {"Station": "Reading", "Date": "2024-01-01"}
-    raw = ["| A | B |\n|---|---|\n| 1 | 3 |\n| 2 | 4 |"]
+    df = pd.DataFrame({
+        "Day": list(range(1, 32)),
+        "dry_bulb": [50] * 31,
+        "wet_bulb": [48] * 31,
+        "wind_direction": ["N"] * 31,
+    })
+    raw_md = ["D1: dry_bulb=50, wet_bulb=48"]
 
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "test_output.xlsx"
-        build_xlsx(tables, kv, raw, str(out))
+        build_xlsx(df, raw_md, str(out))
         assert out.exists(), "XLSX file was not created"
-        print(f"  XLSX builder OK → {out}")
+        print(f"  XLSX builder OK -> {out}")
 
 
 def test_full_pipeline_single():
-    """Run the full pipeline on the first _c.pdf found."""
+    """Run the full pipeline on the first _c.tif found."""
     from pipeline import run_pipeline
 
-    pdfs = get_c_pdfs()
-    if not pdfs:
-        print("SKIP: no _c.pdf files found")
+    tifs = get_c_tifs()
+    if not tifs:
+        print("SKIP: no _c.tif files found")
         return
 
     OUTPUT_DIR.mkdir(exist_ok=True)
-    out_path = OUTPUT_DIR / f"{pdfs[0].stem}.xlsx"
+    out_path = OUTPUT_DIR / f"{tifs[0].stem}.xlsx"
 
-    run_pipeline(str(pdfs[0]), str(out_path), ocr_type="format")
+    run_pipeline(str(tifs[0]), str(out_path))
     assert out_path.exists()
-    print(f"  Full pipeline OK → {out_path}")
-
-
-def test_got_ocr_inference():
-    """Smoke test GOTOCRInference with mocked model."""
-    from ocr_pipeline.ocr_inference import GOTOCRInference
-
-    mock_tokenizer = MagicMock()
-    mock_tokenizer.eos_token_id = 0
-
-    mock_model = MagicMock()
-    mock_model.chat.return_value = "mocked ocr output"
-    mock_model.eval.return_value = mock_model
-
-    with patch("ocr_pipeline.ocr_inference.AutoTokenizer.from_pretrained", return_value=mock_tokenizer):
-        with patch("ocr_pipeline.ocr_inference.AutoModel.from_pretrained", return_value=mock_model):
-            ocr = GOTOCRInference(load_in_4bit=False)
-            img = Image.new("RGB", (10, 10))
-            result = ocr.run_ocr(img, ocr_type="format")
-            assert result == "mocked ocr output"
-            mock_model.chat.assert_called_once()
-            print("  GOTOCRInference smoke test OK")
-
-
-def test_finetune():
-    """Test finetune module functions."""
-    from ocr_pipeline.finetune import get_training_args
-    from transformers import TrainingArguments
-
-    args = get_training_args()
-    assert isinstance(args, TrainingArguments)
-    assert args.fp16 == torch.cuda.is_available()
-    print(f"  get_training_args OK (fp16={args.fp16})")
+    print(f"  Full pipeline OK -> {out_path}")
 
 
 if __name__ == "__main__":
@@ -135,11 +115,5 @@ if __name__ == "__main__":
 
     print("\n[test_full_pipeline_single]")
     test_full_pipeline_single()
-
-    print("\n[test_got_ocr_inference]")
-    test_got_ocr_inference()
-
-    print("\n[test_finetune]")
-    test_finetune()
 
     print("\n=== All tests passed ===")

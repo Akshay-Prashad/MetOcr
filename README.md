@@ -57,4 +57,3 @@ To use the 7B model, change `DEFAULT_MODEL_ID` in `ocr_pipeline/qwen_vlm_ocr.py`
 - PyTorch 2.0+
 - CUDA-capable GPU (7GB+ VRAM for 3B, 24GB+ for 7B)
 - See `requirements.txt` for full list
->>>>>>> 49bbb68 (vlm inteference check)

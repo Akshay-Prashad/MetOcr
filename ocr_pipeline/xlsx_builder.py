@@ -1,3 +1,4 @@
+#xlsx_builder.py
 import openpyxl
 from openpyxl.styles import Font
 import pandas as pd
@@ -39,19 +40,18 @@ COLUMN_COUNT = 46
 
 # Mapping from DataFrame column names to XLSX column positions (1-indexed)
 FIELD_TO_COL = {
-    "attached_thermometer": 2,
-    "barometer_uncorrected": 3,
-    "barometer_corrected": 4,
-    "dry_bulb": 5,
-    "wet_bulb": 6,
-    "wind_direction": 10,
-    "wind_force": 11,
-    "cloud_amount": 12,
-    "cloud_form": 13,
-    "weather": 15,
-    "rain_since_last": 17,
+    "attached_thermometer": 3,   # was 2 — off by 1
+    "barometer_uncorrected": 4,  # was 3
+    "barometer_corrected":   5,  # was 4
+    "dry_bulb":              6,  # was 5
+    "wet_bulb":              7,  # was 6
+    "wind_direction":        11, # was 10
+    "wind_force":            12, # was 11
+    "cloud_amount":          13, # was 12
+    "cloud_form":            14, # was 13
+    "weather":               16, # was 15
+    "rain_since_last":       17, # correct
 }
-
 
 def build_xlsx(
     df: pd.DataFrame,
@@ -84,7 +84,7 @@ def _write_headers(ws):
 
 
 def _write_data(ws, df: pd.DataFrame):
-    data_start = 14  # First data row (day 1)
+    data_start = 18  # First data row (day 1) — matches ground truth layout
     
     for _, row in df.iterrows():
         day = row.get("Day")

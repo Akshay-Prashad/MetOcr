@@ -1,3 +1,4 @@
+#pipeline.py
 #!/usr/bin/env python3
 import argparse
 from pathlib import Path
@@ -19,6 +20,8 @@ def run_pipeline(
     ocr_model: str = "qwen_vlm",
     load_in_4bit: bool = True,
     adapter_path: str = None,
+    model_id: str = None,
+    force_cpu: bool = False,
 ):
     raw_images = load_input(input_path)
     print(f"[1/5] Loaded {len(raw_images)} page(s) from {Path(input_path).name}")
@@ -26,7 +29,10 @@ def run_pipeline(
     clean_images = preprocess_images(raw_images)
     print("[2/5] Pre-processing complete")
 
-    ocr_func = get_ocr_images_function(ocr_model, load_in_4bit=load_in_4bit, adapter_path=adapter_path)
+    ocr_func = get_ocr_images_function(
+        ocr_model, load_in_4bit=load_in_4bit, adapter_path=adapter_path,
+        model_id=model_id, force_cpu=force_cpu,
+    )
     md_pages = ocr_func(clean_images)
     print("[3/5] OCR inference complete")
 
@@ -66,6 +72,16 @@ if __name__ == "__main__":
         default=None,
         help="Path to LoRA adapter directory",
     )
+    parser.add_argument(
+        "--model-id",
+        default=None,
+        help="HuggingFace model ID (default: Qwen/Qwen2.5-VL-3B-Instruct)",
+    )
+    parser.add_argument(
+        "--cpu",
+        action="store_true",
+        help="Force CPU inference (no CUDA, no 4-bit)",
+    )
     args = parser.parse_args()
     run_pipeline(
         args.input,
@@ -73,4 +89,6 @@ if __name__ == "__main__":
         ocr_model=args.ocr_model,
         load_in_4bit=args.load_in_4bit,
         adapter_path=args.adapter_path,
+        model_id=args.model_id,
+        force_cpu=args.cpu,
     )
