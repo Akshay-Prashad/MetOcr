@@ -202,15 +202,16 @@ def setup_model(
 ):
     quant_config = BitsAndBytesConfig(
         load_in_4bit=True,
-        bnb_4bit_compute_dtype=torch.float32,
+        bnb_4bit_compute_dtype=torch.float16,
         bnb_4bit_use_double_quant=True,
         bnb_4bit_quant_type="nf4",
     )
     load_kwargs = dict(
-        device_map="cpu",
+        device_map="auto",
+        max_memory={0: max_gpu_mem, "cpu": "16GB"},
         quantization_config=quant_config,
         low_cpu_mem_usage=True,
-        torch_dtype=torch.float32,
+        torch_dtype=torch.float16,
     )
     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         model_id, **load_kwargs
@@ -273,10 +274,11 @@ def train():
     parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--infer_only", action="store_true", help="Skip training, just test inference")
+    parser.add_argument("--max_gpu_mem", type=str, default="4GB", help="Max GPU memory per device (e.g. 4GB, 5GB)")
     args = parser.parse_args()
 
     set_seed(args.seed)
-    device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     data_pairs = load_all_data(args.data_dir)
     if len(data_pairs) == 0:
@@ -289,7 +291,7 @@ def train():
     val_pairs = data_pairs[split_idx:]
     logger.info(f"Train: {len(train_pairs)}, Val: {len(val_pairs)}")
 
-    model = setup_model(args.model_id, args.adapter_path)
+    model = setup_model(args.model_id, args.adapter_path, max_gpu_mem=args.max_gpu_mem)
     processor = AutoProcessor.from_pretrained(args.model_id)
 
     train_ds = WeatherDataset(train_pairs, processor, augment=(not args.infer_only))
@@ -319,8 +321,8 @@ def train():
         logger.info(f"Column: {item['col_name']}\nOutput:\n{output}")
         return
 
-    from torch.optim import AdamW
-    optimizer = AdamW(model.parameters(), lr=args.lr)
+    from bitsandbytes.optim import AdamW8bit
+    optimizer = AdamW8bit(model.parameters(), lr=args.lr)
     total_steps = math.ceil(len(train_loader) * args.num_epochs / args.grad_accum_steps)
     warmup_steps = max(1, int(0.1 * total_steps))
     scheduler = get_scheduler("cosine", optimizer=optimizer, num_warmup_steps=warmup_steps, num_training_steps=total_steps)
@@ -349,6 +351,8 @@ def train():
                 scheduler.step()
                 optimizer.zero_grad()
                 global_step += 1
+                if global_step % 5 == 0:
+                    torch.cuda.empty_cache()
 
             current_lr = scheduler.get_last_lr()[0] if scheduler is not None else args.lr
             pbar.set_postfix({"loss": f"{loss.item() * args.grad_accum_steps:.4f}", "lr": f"{current_lr:.2e}"})
@@ -362,6 +366,7 @@ def train():
                     model.save_pretrained(args.output_dir)
                     processor.save_pretrained(args.output_dir)
                     logger.info(f"Checkpoint saved to {args.output_dir}")
+                torch.cuda.empty_cache()
                 model.train()
 
         avg_epoch_loss = epoch_loss / len(train_loader)
