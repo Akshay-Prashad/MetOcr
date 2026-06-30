@@ -1,0 +1,87 @@
+# Met Office Register OCR Pipeline (RTX 4060 8GB)
+
+Extracts handwritten meteorological observation tables from scanned register
+pages into the existing xlsx schema, using a quantized open VLM sized for
+8GB of VRAM.
+
+## What's here
+
+- `schema.py` — column mapping matching `MO_9_2_029_c.xlsx`'s left-page layout
+- `crop_utils.py` — splits the two-page spread, crops the table region, slices into row-bands
+- `prompts.py` — schema-locked extraction prompt
+- `qwen_vlm.py` — Qwen2.5-VL-7B-Instruct, 4-bit quantized inference wrapper
+- `got_ocr.py` — GOT-OCR2.0 (580M), optional cheap cross-check pass
+- `xlsx_writeback.py` — merges extracted JSON into the xlsx, flags low-confidence cells
+- `run_pipeline.py` — orchestrates the full flow, single sheet or batch
+
+## Setup
+
+```bash
+python -m venv venv && source venv/bin/activate
+pip install -U torch --index-url https://download.pytorch.org/whl/cu121
+pip install -U transformers accelerate bitsandbytes qwen-vl-utils pillow openpyxl
+# optional, for GOT-OCR2.0 cross-check pass:
+pip install -U tiktoken verovio
+```
+
+First run downloads Qwen2.5-VL-7B-Instruct (~16GB fp16 on disk, loaded at 4-bit
+into VRAM — expect ~5-6GB used on your 8GB card, leaving headroom for image
+tokens).
+
+## Run on one sheet
+
+```bash
+python run_pipeline.py \
+  MO-9_1_029_c.tif \
+  MO_9_2_029_c.xlsx \
+  out/MO-9_1_029_c_extracted.xlsx \
+  --keep-json
+```
+
+## Run on a batch of sheets
+
+```bash
+python run_pipeline.py --batch \
+  /path/to/tifs_dir \
+  MO_9_2_029_c.xlsx \
+  /path/to/out_dir
+```
+
+## If you hit OOM on the 4060
+
+1. Drop `--rows-per-band` to 4 (smaller crops = fewer image tokens).
+2. Lower `max_pixels` in `qwen_vlm.py`'s processor config (currently `1024*28*28`).
+3. Close anything else using VRAM — desktop compositor effects, browser
+   hardware acceleration, etc. all eat into 8GB fast.
+4. As a last resort, set `bnb_4bit_compute_dtype=torch.float16` instead of
+   `bfloat16` in `qwen_vlm.py` — some 4060 variants run fp16 compute slightly
+   more memory-efficiently.
+
+## Calibration
+
+`crop_utils.py`'s `top_frac`/`bottom_frac` values in `prepare_crops()` were
+calibrated against `MO-9_1_029_c.tif`'s specific scan crop. If sheets in your
+batch come from a consistent scanning setup (same scanner, same form,
+similar crop margins), these should hold across the whole volume. If a
+batch was scanned differently, re-check one sample page first:
+
+```bash
+python crop_utils.py /path/to/sample.tif /tmp/calibration_check
+```
+
+Then view `/tmp/calibration_check/*_rows01-06.png` and adjust the fractions
+if headers are cut off or rows are misaligned.
+
+## Expected accuracy
+
+This is 1905 handwritten cursive. The 7B model will get most numeric columns
+(barometer, temperature, dew point) reliably, but will struggle more on:
+- Wind force ranges written as text ("9 to 10")
+- Cloud form abbreviations (e.g. "A.S.", "Ci K.")
+- The free-text Remarks column
+
+Low-confidence cells are flagged with a yellow fill and a comment in the
+output xlsx — budget time for a manual review pass on those rather than
+expecting fully unattended accuracy. For higher accuracy at the cost of
+needing cloud API access, see the earlier discussion of using Claude/GPT-4o
+as the extractor instead of a local 7B model.
