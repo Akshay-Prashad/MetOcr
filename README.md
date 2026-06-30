@@ -1,4 +1,4 @@
-# Met Office Register OCR Pipeline (RTX 4060 8GB)
+# Met Office Register OCR Pipeline
 
 Extracts handwritten meteorological observation tables from scanned register
 pages into the existing xlsx schema, using a quantized open VLM sized for
@@ -47,15 +47,6 @@ python run_pipeline.py --batch \
   /path/to/out_dir
 ```
 
-## If you hit OOM on the 4060
-
-1. Drop `--rows-per-band` to 4 (smaller crops = fewer image tokens).
-2. Lower `max_pixels` in `qwen_vlm.py`'s processor config (currently `1024*28*28`).
-3. Close anything else using VRAM — desktop compositor effects, browser
-   hardware acceleration, etc. all eat into 8GB fast.
-4. As a last resort, set `bnb_4bit_compute_dtype=torch.float16` instead of
-   `bfloat16` in `qwen_vlm.py` — some 4060 variants run fp16 compute slightly
-   more memory-efficiently.
 
 ## Calibration
 
@@ -72,16 +63,4 @@ python crop_utils.py /path/to/sample.tif /tmp/calibration_check
 Then view `/tmp/calibration_check/*_rows01-06.png` and adjust the fractions
 if headers are cut off or rows are misaligned.
 
-## Expected accuracy
 
-This is 1905 handwritten cursive. The 7B model will get most numeric columns
-(barometer, temperature, dew point) reliably, but will struggle more on:
-- Wind force ranges written as text ("9 to 10")
-- Cloud form abbreviations (e.g. "A.S.", "Ci K.")
-- The free-text Remarks column
-
-Low-confidence cells are flagged with a yellow fill and a comment in the
-output xlsx — budget time for a manual review pass on those rather than
-expecting fully unattended accuracy. For higher accuracy at the cost of
-needing cloud API access, see the earlier discussion of using Claude/GPT-4o
-as the extractor instead of a local 7B model.
