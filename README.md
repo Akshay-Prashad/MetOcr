@@ -9,7 +9,7 @@ pages into the existing xlsx schema, using a quantized open VLM sized for
 - `schema.py` — column mapping matching `MO_9_2_029_c.xlsx`'s left-page layout
 - `crop_utils.py` — splits the two-page spread, crops the table region, slices into row-bands
 - `prompts.py` — schema-locked extraction prompt
-- `qwen_vlm.py` — Qwen2.5-VL-7B-Instruct, 4-bit quantized inference wrapper
+- `qwen_vlm.py` — Qwen3-VL-8B-Instruct, 4-bit quantized inference wrapper
 - `got_ocr.py` — GOT-OCR2.0 (580M), optional cheap cross-check pass
 - `xlsx_writeback.py` — merges extracted JSON into the xlsx, flags low-confidence cells
 - `run_pipeline.py` — orchestrates the full flow, single sheet or batch
@@ -24,7 +24,7 @@ pip install -U transformers accelerate bitsandbytes qwen-vl-utils pillow openpyx
 pip install -U tiktoken verovio
 ```
 
-First run downloads Qwen2.5-VL-7B-Instruct (~16GB fp16 on disk, loaded at 4-bit
+First run downloads Qwen3-VL-8B-Instruct (~16GB fp16 on disk, loaded at 4-bit
 into VRAM — expect ~5-6GB used on your 8GB card, leaving headroom for image
 tokens).
 

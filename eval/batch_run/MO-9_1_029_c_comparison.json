@@ -1,0 +1,171 @@
+{
+  "ground_truth_file": "files/MO_9_2_029_c.xlsx",
+  "ocr_file": "out/batch_run/MO-9_1_029_c.xlsx",
+  "sheets": [
+    {
+      "sheet_name": "Sheet1",
+      "ground_truth_cells": 505,
+      "ocr_cells": 511,
+      "exact_matches": 385,
+      "fuzzy_matches": 1,
+      "mismatches": 119,
+      "missing_in_ocr": 0,
+      "extra_in_ocr": 6,
+      "exact_accuracy_percent": 76.24,
+      "fuzzy_accuracy_percent": 76.44,
+      "details": {
+        "mismatches": [
+          {
+            "position": "(18, 3)",
+            "ground_truth": "52",
+            "ocr": "52.3",
+            "similarity": 0.6667
+          },
+          {
+            "position": "(18, 16)",
+            "ground_truth": "B & C",
+            "ocr": "B16.",
+            "similarity": 0.2222
+          },
+          {
+            "position": "(19, 3)",
+            "ground_truth": "52",
+            "ocr": "52.3",
+            "similarity": 0.6667
+          },
+          {
+            "position": "(19, 16)",
+            "ground_truth": "G",
+            "ocr": "G.",
+            "similarity": 0.6667
+          },
+          {
+            "position": "(20, 14)",
+            "ground_truth": "Ci S.",
+            "ocr": "6i S.",
+            "similarity": 0.8
+          },
+          {
+            "position": "(20, 16)",
+            "ground_truth": "B & C",
+            "ocr": "B16.",
+            "similarity": 0.2222
+          },
+          {
+            "position": "(21, 3)",
+            "ground_truth": "52",
+            "ocr": "52.3",
+            "similarity": 0.6667
+          },
+          {
+            "position": "(21, 4)",
+            "ground_truth": "30.356",
+            "ocr": "30.35",
+            "similarity": 0.9091
+          },
+          {
+            "position": "(21, 14)",
+            "ground_truth": "S K n.",
+            "ocr": "SKn.",
+            "similarity": 0.8
+          },
+          {
+            "position": "(21, 16)",
+            "ground_truth": "O",
+            "ocr": "0.",
+            "similarity": 0.0
+          },
+          {
+            "position": "(22, 14)",
+            "ground_truth": "Ci K.",
+            "ocr": "6i K.",
+            "similarity": 0.8
+          },
+          {
+            "position": "(22, 16)",
+            "ground_truth": "B & C",
+            "ocr": "B16.",
+            "similarity": 0.2222
+          },
+          {
+            "position": "(24, 3)",
+            "ground_truth": "52",
+            "ocr": "51",
+            "similarity": 0.5
+          },
+          {
+            "position": "(24, 4)",
+            "ground_truth": "30.4",
+            "ocr": "30.333",
+            "similarity": 0.6
+          },
+          {
+            "position": "(24, 6)",
+            "ground_truth": "51",
+            "ocr": "48",
+            "similarity": 0.0
+          },
+          {
+            "position": "(24, 11)",
+            "ground_truth": "NW",
+            "ocr": "N.W.",
+            "similarity": 0.6667
+          },
+          {
+            "position": "(24, 14)",
+            "ground_truth": "S. K.",
+            "ocr": "S.K.",
+            "similarity": 0.8889
+          },
+          {
+            "position": "(25, 3)",
+            "ground_truth": "53",
+            "ocr": "50",
+            "similarity": 0.5
+          },
+          {
+            "position": "(25, 4)",
+            "ground_truth": "30.086",
+            "ocr": "30.076",
+            "similarity": 0.8333
+          },
+          {
+            "position": "(25, 5)",
+            "ground_truth": "30.016",
+            "ocr": "30.076",
+            "similarity": 0.8333
+          }
+        ],
+        "missing_in_ocr": [],
+        "extra_in_ocr": [
+          {
+            "position": "(24, 15)",
+            "value": "N"
+          },
+          {
+            "position": "(34, 15)",
+            "value": "B46"
+          },
+          {
+            "position": "(35, 15)",
+            "value": "B46"
+          },
+          {
+            "position": "(36, 8)",
+            "value": "46"
+          },
+          {
+            "position": "(36, 9)",
+            "value": "41"
+          },
+          {
+            "position": "(36, 15)",
+            "value": "Bt6"
+          }
+        ],
+        "note": "Details truncated to first 20 items. Full results saved to JSON."
+      }
+    }
+  ],
+  "overall_exact_accuracy": 76.24
+}

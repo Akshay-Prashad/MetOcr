@@ -1,0 +1,67 @@
+
+======================================================================
+                           ACCURACY REPORT                            
+======================================================================
+Ground Truth File:  files/MO_9_2_053_c.xlsx
+OCR File:           out/batch_run/MO-9_1_053_c.xlsx
+----------------------------------------------------------------------
+Total cells (GT):            493
+Exact matches:               230
+Mismatches:                  248
+Missing in OCR:              15
+----------------------------------------------------------------------
+🎯 ACCURACY: 46.65%
+======================================================================
+
+Top 10 Mismatches:
+----------------------------------------------------------------------
+1. Position (18, 16)
+   GT:   O
+   OCR:  0
+   Similarity: 0.0
+
+2. Position (19, 13)
+   GT:   7
+   OCR:  4
+   Similarity: 0.0
+
+3. Position (19, 38)
+   GT:   55
+   OCR:  46
+   Similarity: 0.0
+
+4. Position (20, 38)
+   GT:   57
+   OCR:  41
+   Similarity: 0.0
+
+5. Position (22, 38)
+   GT:   56
+   OCR:  43
+   Similarity: 0.0
+
+6. Position (23, 3)
+   GT:   63
+   OCR:  52
+   Similarity: 0.0
+
+7. Position (23, 11)
+   GT:   S
+   OCR:  WNW
+   Similarity: 0.0
+
+8. Position (23, 12)
+   GT:   3
+   OCR:  9 to 10
+   Similarity: 0.0
+
+9. Position (23, 38)
+   GT:   56
+   OCR:  44
+   Similarity: 0.0
+
+10. Position (24, 16)
+   GT:   O
+   OCR:  B & C
+   Similarity: 0.0
+

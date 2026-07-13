@@ -1,6 +1,6 @@
 """
 GOT-OCR2.0 (580M) -- cheap, fast first-pass OCR for raw cell text, run as a
-secondary signal alongside Qwen2.5-VL. Not schema-aware on its own, but its
+secondary signal alongside Qwen3-VL. Not schema-aware on its own, but its
 raw transcription is useful for cross-checking Qwen's structured reads,
 especially on numeric columns. Trivial to run on 8GB; treat it as a sanity
 check rather than the primary extractor.

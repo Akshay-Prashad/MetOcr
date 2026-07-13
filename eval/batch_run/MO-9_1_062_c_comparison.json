@@ -1,0 +1,228 @@
+{
+  "ground_truth_file": "files/MO_9_2_062_c.xlsx",
+  "ocr_file": "out/batch_run/MO-9_1_062_c.xlsx",
+  "sheets": [
+    {
+      "sheet_name": "Sheet1",
+      "ground_truth_cells": 497,
+      "ocr_cells": 543,
+      "exact_matches": 230,
+      "fuzzy_matches": 8,
+      "mismatches": 226,
+      "missing_in_ocr": 33,
+      "extra_in_ocr": 79,
+      "exact_accuracy_percent": 46.28,
+      "fuzzy_accuracy_percent": 47.89,
+      "details": {
+        "mismatches": [
+          {
+            "position": "(5, 20)",
+            "ground_truth": "At ?? Local Time",
+            "ocr": "At Local Time",
+            "similarity": 0.8966
+          },
+          {
+            "position": "(18, 4)",
+            "ground_truth": "30.272",
+            "ocr": "30218",
+            "similarity": 0.5455
+          },
+          {
+            "position": "(18, 5)",
+            "ground_truth": "30.218",
+            "ocr": "30218",
+            "similarity": 0.9091
+          },
+          {
+            "position": "(18, 14)",
+            "ground_truth": "AK.",
+            "ocr": "A.S.",
+            "similarity": 0.5714
+          },
+          {
+            "position": "(18, 37)",
+            "ground_truth": "51.9",
+            "ocr": "49.9",
+            "similarity": 0.5
+          },
+          {
+            "position": "(18, 38)",
+            "ground_truth": "32",
+            "ocr": "42",
+            "similarity": 0.5
+          },
+          {
+            "position": "(19, 3)",
+            "ground_truth": "52",
+            "ocr": "62",
+            "similarity": 0.5
+          },
+          {
+            "position": "(19, 4)",
+            "ground_truth": "30.318",
+            "ocr": "30251",
+            "similarity": 0.5455
+          },
+          {
+            "position": "(19, 5)",
+            "ground_truth": "30.251",
+            "ocr": "30251",
+            "similarity": 0.9091
+          },
+          {
+            "position": "(19, 6)",
+            "ground_truth": "51",
+            "ocr": "61",
+            "similarity": 0.5
+          },
+          {
+            "position": "(19, 11)",
+            "ground_truth": "W",
+            "ocr": "W.",
+            "similarity": 0.6667
+          },
+          {
+            "position": "(19, 14)",
+            "ground_truth": "SK.",
+            "ocr": "S K",
+            "similarity": 0.6667
+          },
+          {
+            "position": "(19, 18)",
+            "ground_truth": "0.1",
+            "ocr": "0.02",
+            "similarity": 0.5714
+          },
+          {
+            "position": "(19, 37)",
+            "ground_truth": "51.9",
+            "ocr": "49.9",
+            "similarity": 0.5
+          },
+          {
+            "position": "(19, 38)",
+            "ground_truth": "40",
+            "ocr": "46",
+            "similarity": 0.5
+          },
+          {
+            "position": "(20, 3)",
+            "ground_truth": "53",
+            "ocr": "63",
+            "similarity": 0.5
+          },
+          {
+            "position": "(20, 4)",
+            "ground_truth": "30.35",
+            "ocr": "30250",
+            "similarity": 0.6
+          },
+          {
+            "position": "(20, 5)",
+            "ground_truth": "30.28",
+            "ocr": "30250",
+            "similarity": 0.6
+          },
+          {
+            "position": "(20, 11)",
+            "ground_truth": "S",
+            "ocr": "S.",
+            "similarity": 0.6667
+          },
+          {
+            "position": "(20, 37)",
+            "ground_truth": "51.9",
+            "ocr": "49.9",
+            "similarity": 0.5
+          }
+        ],
+        "missing_in_ocr": [
+          {
+            "position": "(18, 15)",
+            "value": "G"
+          },
+          {
+            "position": "(19, 15)",
+            "value": "G"
+          },
+          {
+            "position": "(19, 44)",
+            "value": "0.1"
+          },
+          {
+            "position": "(20, 15)",
+            "value": "O"
+          },
+          {
+            "position": "(20, 18)",
+            "value": "0.02"
+          },
+          {
+            "position": "(21, 15)",
+            "value": "O"
+          },
+          {
+            "position": "(22, 15)",
+            "value": "R"
+          },
+          {
+            "position": "(23, 15)",
+            "value": "O"
+          },
+          {
+            "position": "(23, 18)",
+            "value": "0.04"
+          },
+          {
+            "position": "(25, 44)",
+            "value": "4.9"
+          }
+        ],
+        "extra_in_ocr": [
+          {
+            "position": "(5, 46)",
+            "value": "Remarks"
+          },
+          {
+            "position": "(7, 45)",
+            "value": "symbol"
+          },
+          {
+            "position": "(18, 16)",
+            "value": "9"
+          },
+          {
+            "position": "(18, 18)",
+            "value": "0.05"
+          },
+          {
+            "position": "(19, 16)",
+            "value": "9"
+          },
+          {
+            "position": "(19, 17)",
+            "value": "10"
+          },
+          {
+            "position": "(20, 16)",
+            "value": "0"
+          },
+          {
+            "position": "(20, 17)",
+            "value": "02"
+          },
+          {
+            "position": "(20, 44)",
+            "value": "1.75"
+          },
+          {
+            "position": "(21, 16)",
+            "value": "0"
+          }
+        ],
+        "note": "Details truncated to first 20 items. Full results saved to JSON."
+      }
+    }
+  ],
+  "overall_exact_accuracy": 46.28
+}

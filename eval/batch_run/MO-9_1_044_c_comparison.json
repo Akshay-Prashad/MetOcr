@@ -1,0 +1,228 @@
+{
+  "ground_truth_file": "files/MO_9_2_044_c.xlsx",
+  "ocr_file": "out/batch_run/MO-9_1_044_c.xlsx",
+  "sheets": [
+    {
+      "sheet_name": "Sheet1",
+      "ground_truth_cells": 496,
+      "ocr_cells": 569,
+      "exact_matches": 216,
+      "fuzzy_matches": 4,
+      "mismatches": 262,
+      "missing_in_ocr": 14,
+      "extra_in_ocr": 87,
+      "exact_accuracy_percent": 43.55,
+      "fuzzy_accuracy_percent": 44.35,
+      "details": {
+        "mismatches": [
+          {
+            "position": "(5, 20)",
+            "ground_truth": "At ?? Local Time",
+            "ocr": "At Local Time",
+            "similarity": 0.8966
+          },
+          {
+            "position": "(18, 2)",
+            "ground_truth": "<openpyxl.worksheet.formula.ArrayFormula object at 0x7f68ce1d3b60>",
+            "ocr": "1",
+            "similarity": 0.0299
+          },
+          {
+            "position": "(18, 11)",
+            "ground_truth": "W",
+            "ocr": "W.",
+            "similarity": 0.6667
+          },
+          {
+            "position": "(18, 12)",
+            "ground_truth": "4",
+            "ocr": "4 8",
+            "similarity": 0.5
+          },
+          {
+            "position": "(18, 16)",
+            "ground_truth": "B & C",
+            "ocr": "Kt6",
+            "similarity": 0.0
+          },
+          {
+            "position": "(18, 18)",
+            "ground_truth": "0.05",
+            "ocr": "0.06",
+            "similarity": 0.75
+          },
+          {
+            "position": "(18, 37)",
+            "ground_truth": "60.9",
+            "ocr": "49.9",
+            "similarity": 0.5
+          },
+          {
+            "position": "(18, 38)",
+            "ground_truth": "47",
+            "ocr": "42",
+            "similarity": 0.5
+          },
+          {
+            "position": "(19, 5)",
+            "ground_truth": "29.879",
+            "ocr": "29.849",
+            "similarity": 0.8333
+          },
+          {
+            "position": "(19, 7)",
+            "ground_truth": "55",
+            "ocr": "53",
+            "similarity": 0.5
+          },
+          {
+            "position": "(19, 11)",
+            "ground_truth": "WSW",
+            "ocr": "W.S.W.",
+            "similarity": 0.6667
+          },
+          {
+            "position": "(19, 12)",
+            "ground_truth": "6",
+            "ocr": "6 10",
+            "similarity": 0.4
+          },
+          {
+            "position": "(19, 16)",
+            "ground_truth": "O.",
+            "ocr": "0.",
+            "similarity": 0.5
+          },
+          {
+            "position": "(19, 37)",
+            "ground_truth": "62.9",
+            "ocr": "49.9",
+            "similarity": 0.5
+          },
+          {
+            "position": "(19, 38)",
+            "ground_truth": "52",
+            "ocr": "46",
+            "similarity": 0.0
+          },
+          {
+            "position": "(20, 5)",
+            "ground_truth": "30.005",
+            "ocr": "30.003",
+            "similarity": 0.8333
+          },
+          {
+            "position": "(20, 11)",
+            "ground_truth": "SW",
+            "ocr": "S.W.",
+            "similarity": 0.6667
+          },
+          {
+            "position": "(20, 12)",
+            "ground_truth": "4",
+            "ocr": "4 8",
+            "similarity": 0.5
+          },
+          {
+            "position": "(20, 16)",
+            "ground_truth": "B & C",
+            "ocr": "Kt6",
+            "similarity": 0.0
+          },
+          {
+            "position": "(20, 37)",
+            "ground_truth": "59.9",
+            "ocr": "49.9",
+            "similarity": 0.75
+          }
+        ],
+        "missing_in_ocr": [
+          {
+            "position": "(18, 44)",
+            "value": "1.25"
+          },
+          {
+            "position": "(19, 44)",
+            "value": "3"
+          },
+          {
+            "position": "(21, 44)",
+            "value": "5.75"
+          },
+          {
+            "position": "(23, 18)",
+            "value": "0.07"
+          },
+          {
+            "position": "(23, 44)",
+            "value": "2"
+          },
+          {
+            "position": "(25, 44)",
+            "value": "1.9"
+          },
+          {
+            "position": "(30, 44)",
+            "value": "2.6"
+          },
+          {
+            "position": "(31, 44)",
+            "value": "11.3"
+          },
+          {
+            "position": "(37, 18)",
+            "value": "0.25"
+          },
+          {
+            "position": "(38, 44)",
+            "value": "10.22"
+          }
+        ],
+        "extra_in_ocr": [
+          {
+            "position": "(5, 46)",
+            "value": "Remarks"
+          },
+          {
+            "position": "(7, 45)",
+            "value": "symbol"
+          },
+          {
+            "position": "(19, 18)",
+            "value": "0.02"
+          },
+          {
+            "position": "(22, 18)",
+            "value": "0.03"
+          },
+          {
+            "position": "(24, 17)",
+            "value": "SK"
+          },
+          {
+            "position": "(25, 15)",
+            "value": "G."
+          },
+          {
+            "position": "(25, 17)",
+            "value": "SK"
+          },
+          {
+            "position": "(25, 18)",
+            "value": "0.34"
+          },
+          {
+            "position": "(26, 15)",
+            "value": "G."
+          },
+          {
+            "position": "(26, 17)",
+            "value": "SK"
+          }
+        ],
+        "note": "Details truncated to first 20 items. Full results saved to JSON."
+      }
+    }
+  ],
+  "overall_exact_accuracy": 43.55
+}

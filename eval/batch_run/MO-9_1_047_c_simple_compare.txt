@@ -1,0 +1,67 @@
+
+======================================================================
+                           ACCURACY REPORT                            
+======================================================================
+Ground Truth File:  files/MO_9_2_047_c.xlsx
+OCR File:           out/batch_run/MO-9_1_047_c.xlsx
+----------------------------------------------------------------------
+Total cells (GT):            506
+Exact matches:               234
+Mismatches:                  256
+Missing in OCR:              16
+----------------------------------------------------------------------
+🎯 ACCURACY: 46.25%
+======================================================================
+
+Top 10 Mismatches:
+----------------------------------------------------------------------
+1. Position (18, 2)
+   GT:   <openpyxl.worksheet.formula.ArrayFormula object at 0x786ecce86e40>
+   OCR:  1
+   Similarity: 0.0
+
+2. Position (18, 38)
+   GT:   59
+   OCR:  42
+   Similarity: 0.0
+
+3. Position (19, 38)
+   GT:   55
+   OCR:  46
+   Similarity: 0.0
+
+4. Position (22, 38)
+   GT:   52
+   OCR:  43
+   Similarity: 0.0
+
+5. Position (23, 6)
+   GT:   61
+   OCR:  53
+   Similarity: 0.0
+
+6. Position (23, 12)
+   GT:   3
+   OCR:  9 to 10
+   Similarity: 0.0
+
+7. Position (23, 13)
+   GT:   7
+   OCR:  10
+   Similarity: 0.0
+
+8. Position (23, 14)
+   GT:   SK
+   OCR:  N
+   Similarity: 0.0
+
+9. Position (23, 16)
+   GT:   B & C
+   OCR:  O
+   Similarity: 0.0
+
+10. Position (23, 37)
+   GT:   66.4
+   OCR:  53
+   Similarity: 0.0
+

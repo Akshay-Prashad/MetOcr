@@ -1,0 +1,21 @@
+sheet,position,ground_truth,ocr,similarity
+Sheet1,"(5, 20)",At ?? Local Time,At Local Time,0.8966
+Sheet1,"(18, 2)",<openpyxl.worksheet.formula.ArrayFormula object at 0x7f68ce1d3b60>,1,0.0299
+Sheet1,"(18, 11)",W,W.,0.6667
+Sheet1,"(18, 12)",4,4 8,0.5
+Sheet1,"(18, 16)",B & C,Kt6,0.0
+Sheet1,"(18, 18)",0.05,0.06,0.75
+Sheet1,"(18, 37)",60.9,49.9,0.5
+Sheet1,"(18, 38)",47,42,0.5
+Sheet1,"(19, 5)",29.879,29.849,0.8333
+Sheet1,"(19, 7)",55,53,0.5
+Sheet1,"(19, 11)",WSW,W.S.W.,0.6667
+Sheet1,"(19, 12)",6,6 10,0.4
+Sheet1,"(19, 16)",O.,0.,0.5
+Sheet1,"(19, 37)",62.9,49.9,0.5
+Sheet1,"(19, 38)",52,46,0.0
+Sheet1,"(20, 5)",30.005,30.003,0.8333
+Sheet1,"(20, 11)",SW,S.W.,0.6667
+Sheet1,"(20, 12)",4,4 8,0.5
+Sheet1,"(20, 16)",B & C,Kt6,0.0
+Sheet1,"(20, 37)",59.9,49.9,0.75

@@ -1,0 +1,110 @@
+[
+  {
+    "sheet": "MO-9_1_029_c",
+    "gt_cells": 505,
+    "exact_matches": 385,
+    "fuzzy_matches": 1,
+    "mismatches": 119,
+    "exact_accuracy": 76.24,
+    "fuzzy_accuracy": 76.44
+  },
+  {
+    "sheet": "MO-9_1_032_c",
+    "gt_cells": 480,
+    "exact_matches": 202,
+    "fuzzy_matches": 3,
+    "mismatches": 257,
+    "exact_accuracy": 42.08,
+    "fuzzy_accuracy": 42.71
+  },
+  {
+    "sheet": "MO-9_1_035_c",
+    "gt_cells": 565,
+    "exact_matches": 221,
+    "fuzzy_matches": 2,
+    "mismatches": 292,
+    "exact_accuracy": 39.12,
+    "fuzzy_accuracy": 39.47
+  },
+  {
+    "sheet": "MO-9_1_038_c",
+    "gt_cells": 515,
+    "exact_matches": 273,
+    "fuzzy_matches": 6,
+    "mismatches": 222,
+    "exact_accuracy": 53.01,
+    "fuzzy_accuracy": 54.17
+  },
+  {
+    "sheet": "MO-9_1_041_c",
+    "gt_cells": 533,
+    "exact_matches": 226,
+    "fuzzy_matches": 2,
+    "mismatches": 262,
+    "exact_accuracy": 42.4,
+    "fuzzy_accuracy": 42.78
+  },
+  {
+    "sheet": "MO-9_1_044_c",
+    "gt_cells": 496,
+    "exact_matches": 216,
+    "fuzzy_matches": 4,
+    "mismatches": 262,
+    "exact_accuracy": 43.55,
+    "fuzzy_accuracy": 44.35
+  },
+  {
+    "sheet": "MO-9_1_047_c",
+    "gt_cells": 506,
+    "exact_matches": 234,
+    "fuzzy_matches": 0,
+    "mismatches": 256,
+    "exact_accuracy": 46.25,
+    "fuzzy_accuracy": 46.25
+  },
+  {
+    "sheet": "MO-9_1_050_c",
+    "gt_cells": 515,
+    "exact_matches": 220,
+    "fuzzy_matches": 5,
+    "mismatches": 275,
+    "exact_accuracy": 42.72,
+    "fuzzy_accuracy": 43.69
+  },
+  {
+    "sheet": "MO-9_1_053_c",
+    "gt_cells": 493,
+    "exact_matches": 230,
+    "fuzzy_matches": 3,
+    "mismatches": 245,
+    "exact_accuracy": 46.65,
+    "fuzzy_accuracy": 47.26
+  },
+  {
+    "sheet": "MO-9_1_056_c",
+    "gt_cells": 499,
+    "exact_matches": 239,
+    "fuzzy_matches": 7,
+    "mismatches": 238,
+    "exact_accuracy": 47.9,
+    "fuzzy_accuracy": 49.3
+  },
+  {
+    "sheet": "MO-9_1_059_c",
+    "gt_cells": 499,
+    "exact_matches": 229,
+    "fuzzy_matches": 4,
+    "mismatches": 248,
+    "exact_accuracy": 45.89,
+    "fuzzy_accuracy": 46.69
+  },
+  {
+    "sheet": "MO-9_1_062_c",
+    "gt_cells": 497,
+    "exact_matches": 230,
+    "fuzzy_matches": 8,
+    "mismatches": 226,
+    "exact_accuracy": 46.28,
+    "fuzzy_accuracy": 47.89
+  }
+]
